@@ -40,26 +40,26 @@ class gotoXY():
     def move2goal(self):
         #goal_pose = Pose()
         goal_pose = Odometry()
-        goal_pose.pose.pose.position.x = input("Set your x goal: ")
-        goal_pose.pose.pose.position.y = input("Set your y goal: ")
+        goal_pose.pose.position.x = input("Set your x goal: ")
+        goal_pose.pose.position.y = input("Set your y goal: ")
 	#goal_pose.theta = input("Set your final orientation: ")
         angle = input("Set your final orientation: ")
 	#orientation = goal_pose.theta
         distance_tolerance = input("Set your tolerance: ")
         vel_msg = Twist()
 
-        while sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.position.y), 2)) >= distance_tolerance:
+        while sqrt(pow((goal_pose.pose.position.x - self.pose.pose.position.x), 2) + pow((goal_pose.pose.position.y - self.pose.pose.position.y), 2)) >= distance_tolerance:
 
             #Porportional Controller
             #linear velocity in the x-axis:
-            vel_msg.linear.x = 1.5 * sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.position.y), 2))
+            vel_msg.linear.x = 1.5 * sqrt(pow((goal_pose.pose.position.x - self.pose.pose.position.x), 2) + pow((goal_pose.pose.position.y - self.pose.pose.position.y), 2))
             vel_msg.linear.y = 0
             vel_msg.linear.z = 0
 
             #angular velocity in the z-axis:
             vel_msg.angular.x = 0
             vel_msg.angular.y = 0
-            vel_msg.angular.z = 4 * (atan2(goal_pose.pose.pose.position.y - self.pose.pose.position.y, goal_pose.pose.pose.position.x - self.pose.pose.position.x) - yaw)
+            vel_msg.angular.z = 4 * (atan2(goal_pose.pose.position.y - self.pose.pose.position.y, goal_pose.pose.position.x - self.pose.pose.position.x) - yaw)
 
             #Publishing our vel_msg
             self.velocity_publisher.publish(vel_msg)
