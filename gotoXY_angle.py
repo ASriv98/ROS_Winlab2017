@@ -6,7 +6,7 @@ from math import pow,atan2,sqrt
 from nav_msgs.msg import Odometry
 import tf
 import math
-
+from math import radians, degrees
 
 class gotoXY():
 
@@ -55,22 +55,23 @@ class gotoXY():
 	quaternion = (self.pose.pose.pose.orientation.x, self.pose.pose.pose.orientation.y, self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w)
 	euler = tf.transformations.euler_from_quaternion(quaternion)
 	yaw = euler[2]
-	print "hello"
-        while abs(atan2(goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y, goal_pose.pose.pose.position.x-self.pose.pose.pose.position.x) - yaw) >= angle_tolerance:
+	angle = radians(yaw)
+        while abs(atan2(goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y, goal_pose.pose.pose.position.x-self.pose.pose.pose.position.x) - angle) >= angle_tolerance:
             #angular velocity in the z-axis:
             vel_msg.angular.x = 0
             vel_msg.angular.y = 0
-            v_z = 4 * (atan2(goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y, goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x) - yaw)
-            if(v_z < -1):
+            v_z = 4 * (atan2(goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y, goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x) - angle)
+            if(v_z < -0.75):
                  v_z = -0.75
-            if(v_z > 1):
+            if(v_z > 0.75):
                  v_z = 0.75
 	    vel_msg.angular.z = v_z 
-	    print yaw
+	    print angle
 	    quaternion = (self.pose.pose.pose.orientation.x, self.pose.pose.pose.orientation.y, self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w)
 	    euler = tf.transformations.euler_from_quaternion(quaternion)
             yaw = euler[2]
-
+	    angle = radians(yaw)
+	print angle
 
             self.velocity_publisher.publish(vel_msg)
             self.rate.sleep()
@@ -79,27 +80,6 @@ class gotoXY():
 	self.velocity_publisher.publish(vel_msg)
         self.rate.sleep()
         
-	while sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2)) >= distance_tolerance:
-
-            #Porportional Controller
-            #linear velocity in the x-axis:
-            v_x = 1.5 * sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2))
-            if(v_x > 0.25):
-                v_x = 0.25
-            vel_msg.linear.x = v_x
-            vel_msg.linear.y = 0
-            vel_msg.linear.z = 0
-	    print "X:"
-	    print self.pose.pose.pose.position.x
-	    print "Y:"
-	    print self.pose.pose.pose.position.y
-
-      
-            #Publishing our vel_msg
-            self.velocity_publisher.publish(vel_msg)
-            self.rate.sleep()
-        #Stopping our robot after the movement is over
-        vel_msg.linear.x = 0
         vel_msg.angular.z = orientation - yaw
 	#(temporary for testing purposes)
 	# vel_msg.angular.z = 0
