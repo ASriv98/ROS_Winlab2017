@@ -46,8 +46,7 @@ class gotoXY():
         goal_pose.pose.pose.position.x = input("Set your x goal: ")
         goal_pose.pose.pose.position.y = input("Set your y goal: ")
 	#goal_pose    print vel_msgse.theta = input("Set your final orientation: ")
-        angle = input("Set your final orientation: ")
-	orientation = angle
+        orientation = input("Set your final orientation: ")
         distance_tolerance = input("Set your tolerance: ")
         angle_tolerance = input("Set your angle tolerance: ")
         vel_msg = Twist()
