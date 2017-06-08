@@ -6,7 +6,7 @@ from math import pow,atan2,sqrt
 from nav_msgs.msg import Odometry
 import tf
 import math
-
+from math import radians, degrees
 
 class gotoXY():
 
@@ -17,9 +17,8 @@ class gotoXY():
         self.pose_subscriber = rospy.Subscriber('/odom', Odometry, self.callback)
         #self.pose = Pose()
         self.pose = Odometry()
-        self.rate = rospy.Rate(5)
-        
-    orientation = 0
+        self.rate = rospy.Rate(10)
+
 
         
     #Callback function implementing the pose value received
@@ -45,7 +44,6 @@ class gotoXY():
 	#print goal_pose
         goal_pose.pose.pose.position.x = input("Set your x goal: ")
         goal_pose.pose.pose.position.y = input("Set your y goal: ")
-	#goal_pose    print vel_msgse.theta = input("Set your final orientation: ")
         orientation = input("Set your final orientation: ")
         distance_tolerance = input("Set your tolerance: ")
         angle_tolerance = input("Set your angle tolerance: ")
@@ -54,35 +52,71 @@ class gotoXY():
 	quaternion = (self.pose.pose.pose.orientation.x, self.pose.pose.pose.orientation.y, self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w)
 	euler = tf.transformations.euler_from_quaternion(quaternion)
 	yaw = euler[2]
-	print "hello"
-        while abs(atan2(goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y, goal_pose.pose.pose.position.x-self.pose.pose.pose.position.x) - yaw) >= angle_tolerance:
+	
+	#Changes to 2pi plane
+	if (yaw < 0):
+	    yaw = yaw + (2*math.pi)
+	direction = atan2(goal_pose.pose.pose.position.y, goal_pose.pose.pose.position.x)
+	if (direction < 0):
+	    direction = direction + (2*math.pi)
+	print "direction:" 
+	print direction
+
+	# sets the direction of turn
+	clockwise = False
+	if (direction - yaw) <= math.pi:
+		if abs(direction - yaw) > 0:
+		    clockwise = False
+		else:
+		    clockwise = True
+	if (direction - yaw) > math.pi:
+		if abs(direction - yaw) > 0:
+		    clockwise = True
+		else:
+		    clockwise = False
+
+	#Turns the robot   
+        while abs(yaw - direction) >= angle_tolerance:
             #angular velocity in the z-axis:
             vel_msg.angular.x = 0
             vel_msg.angular.y = 0
-            v_z = 4 * (atan2(goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y, goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x) - yaw)
-            if(v_z < -1):
-                 v_z = -0.75
-            if(v_z > 1):
-                 v_z = 0.75
+            v_z = 4 * (direction - yaw)
+	    
+	    if abs(v_z) > 1:
+		v_z = 1
+	    if clockwise == True:
+	        v_z = -abs(v_z)
+	    else:
+	        v_z = abs(v_z)
+
 	    vel_msg.angular.z = v_z 
+	    print "Yaw:" 
 	    print yaw
 	    quaternion = (self.pose.pose.pose.orientation.x, self.pose.pose.pose.orientation.y, self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w)
 	    euler = tf.transformations.euler_from_quaternion(quaternion)
             yaw = euler[2]
+	    if (yaw < 0):
+	        yaw = yaw + (2*math.pi)
+	   
             self.velocity_publisher.publish(vel_msg)
             self.rate.sleep()
-
+	print yaw
 	vel_msg.angular.z = 0
 	self.velocity_publisher.publish(vel_msg)
         self.rate.sleep()
         
+	
+	target_distance = sqrt((goal_pose.pose.pose.position.x)^2+(goal_pose.pose.pose.position.y)^2))
+	current_distance= sqrt((self.pose.pose.pose.position.x)^2+(self.pose.pose.pose.position.y)^2))
+		
+
 	while sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2)) >= distance_tolerance:
 
             #Porportional Controller
             #linear velocity in the x-axis:
             v_x = 1.5 * sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2))
-            if(v_x > 0.25):
-                v_x = 0.25
+            if(v_x > 0.5):
+                v_x = 0.5
             vel_msg.linear.x = v_x
             vel_msg.linear.y = 0
             vel_msg.linear.z = 0
@@ -97,7 +131,7 @@ class gotoXY():
             self.rate.sleep()
         #Stopping our robot after the movement is over
         vel_msg.linear.x = 0
-        vel_msg.angular.z = orientation - yaw
+        #vel_msg.angular.z = orientation - yaw
 	#(temporary for testing purposes)
 	# vel_msg.angular.z = 0
         self.velocity_publisher.publish(vel_msg)
