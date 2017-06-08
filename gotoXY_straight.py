@@ -69,8 +69,6 @@ class gotoXY():
 	    quaternion = (self.pose.pose.pose.orientation.x, self.pose.pose.pose.orientation.y, self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w)
 	    euler = tf.transformations.euler_from_quaternion(quaternion)
             yaw = euler[2]
-
-
             self.velocity_publisher.publish(vel_msg)
             self.rate.sleep()
 
