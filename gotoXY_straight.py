@@ -44,7 +44,7 @@ class gotoXY():
 	#print goal_pose
         goal_pose.pose.pose.position.x = input("Set your x goal: ")
         goal_pose.pose.pose.position.y = input("Set your y goal: ")
-        orientation = input("Set your final orientation: ")
+        #orientation = input("Set your final orientation: ")
         distance_tolerance = input("Set your tolerance: ")
         angle_tolerance = input("Set your angle tolerance: ")
         vel_msg = Twist()
@@ -105,25 +105,28 @@ class gotoXY():
 	self.velocity_publisher.publish(vel_msg)
         self.rate.sleep()
         
-	
-	target_distance = sqrt((goal_pose.pose.pose.position.x)^2+(goal_pose.pose.pose.position.y)^2))
-	current_distance= sqrt((self.pose.pose.pose.position.x)^2+(self.pose.pose.pose.position.y)^2))
+	target_distance  = math.sqrt((goal_pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y)**2)
+	current_distance = math.sqrt((self.pose.pose.pose.position.x)**2 + (self.pose.pose.pose.position.y)**2)
+
+	'''
+	while sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2)) >= distance_tolerance:'''
+	while (target_distance - current_distance >= distance_tolerance):
 		
-
-	while sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2)) >= distance_tolerance:
-
-            #Porportional Controller
+            #Proportional Controller
             #linear velocity in the x-axis:
+
             v_x = 1.5 * sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2))
             if(v_x > 0.5):
                 v_x = 0.5
             vel_msg.linear.x = v_x
             vel_msg.linear.y = 0
             vel_msg.linear.z = 0
-	    print "X:"
-	    print self.pose.pose.pose.position.x
-	    print "Y:"
-	    print self.pose.pose.pose.position.y
+	    print "target_distance:"
+	    print target_distance
+	    print "current_distance:"
+	    print current_distance
+	    target_distance  = math.sqrt((goal_pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y)**2)
+	    current_distance = math.sqrt((self.pose.pose.pose.position.x)**2 + (self.pose.pose.pose.position.y)**2)
 
       
             #Publishing our vel_msg
