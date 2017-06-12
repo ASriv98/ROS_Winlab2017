@@ -56,7 +56,7 @@ class gotoXY():
 	#Changes to 2pi plane
 	if (yaw < 0):
 	    yaw = yaw + (2*math.pi)
-	direction = atan2(goal_pose.pose.pose.position.y, goal_pose.pose.pose.position.x)
+	direction = atan2(goal_pose.pose.pose.position.y-self.pose.pose.pose.position.y, goal_pose.pose.pose.position.x-self.pose.pose.pose.position.x)
 	if (direction < 0):
 	    direction = direction + (2*math.pi)
 	print "direction:" 
