@@ -108,7 +108,7 @@ class gotoXY():
         self.rate.sleep()
         
 	target_distance  = math.sqrt((goal_pose.pose.pose.position.x-self.pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y-self.pose.pose.pose.position.y)**2)
-	current_distance = math.sqrt((self.pose.pose.pose.position.x)**2 + (self.pose.pose.pose.position.y)**2)
+	current_distance = 0
 
 	'''
 	while sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2)) >= distance_tolerance:'''
