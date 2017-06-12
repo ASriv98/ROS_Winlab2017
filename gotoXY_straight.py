@@ -44,6 +44,8 @@ class gotoXY():
 	#print goal_pose
         goal_pose.pose.pose.position.x = input("Set your x goal: ")
         goal_pose.pose.pose.position.y = input("Set your y goal: ")
+	current_x = self.pose.pose.pose.position.x
+	current_y = self.pose.pose.pose.position.y
         #orientation = input("Set your final orientation: ")
         distance_tolerance = input("Set your tolerance: ")
         angle_tolerance = input("Set your angle tolerance: ")
@@ -105,7 +107,7 @@ class gotoXY():
 	self.velocity_publisher.publish(vel_msg)
         self.rate.sleep()
         
-	target_distance  = math.sqrt((goal_pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y)**2)
+	target_distance  = math.sqrt((goal_pose.pose.pose.position.x-self.pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y-self.pose.pose.pose.position.y)**2)
 	current_distance = math.sqrt((self.pose.pose.pose.position.x)**2 + (self.pose.pose.pose.position.y)**2)
 
 	'''
@@ -125,8 +127,8 @@ class gotoXY():
 	    print target_distance
 	    print "current_distance:"
 	    print current_distance
-	    target_distance  = math.sqrt((goal_pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y)**2)
-	    current_distance = math.sqrt((self.pose.pose.pose.position.x)**2 + (self.pose.pose.pose.position.y)**2)
+	    #target_distance  = math.sqrt((goal_pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y)**2)
+	    current_distance = math.sqrt((self.pose.pose.pose.position.x-current_x)**2 + (self.pose.pose.pose.position.y-current_y)**2)
 
       
             #Publishing our vel_msg
