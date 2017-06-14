@@ -19,7 +19,6 @@ class gotoXY():
         self.pose = Odometry()
         self.rate = rospy.Rate(10)
 
-
         
     #Callback function implementing the pose value received
     def callback(self, data):
@@ -28,15 +27,8 @@ class gotoXY():
         self.pose.pose.pose.position.y = round(self.pose.pose.pose.position.y, 4)
 	quaternion = (self.pose.pose.pose.orientation.x, self.pose.pose.pose.orientation.y, self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w)
 	euler = tf.transformations.euler_from_quaternion(quaternion)
- 	roll = euler[0]
-        pitch = euler[1]
         global yaw
 	yaw = euler[2]
-
-
-    def get_distance(self, goal_x, goal_y):
-        distance = sqrt(pow((goal_x - self.pose.position.x), 2) + pow((goal_y - self.pose.position.y), 2))
-        return distance
 
     def move2goal(self):
         #goal_pose = Pose()
@@ -67,15 +59,15 @@ class gotoXY():
 	# sets the direction of turn
 	clockwise = False
 	if (direction - yaw) <= math.pi:
-		if abs(direction - yaw) > 0:
-		    clockwise = False
-		else:
-		    clockwise = True
+	    if abs(direction - yaw) > 0:
+	        clockwise = False
+	    else:
+	        clockwise = True
 	if (direction - yaw) > math.pi:
-		if abs(direction - yaw) > 0:
-		    clockwise = True
-		else:
-		    clockwise = False
+	    if abs(direction - yaw) > 0:
+	        clockwise = True
+	    else:
+	        clockwise = False
 
 	#Turns the robot   
         while abs(yaw - direction) >= angle_tolerance:
@@ -110,8 +102,6 @@ class gotoXY():
 	target_distance  = math.sqrt((goal_pose.pose.pose.position.x-self.pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y-self.pose.pose.pose.position.y)**2)
 	current_distance = 0
 
-	'''
-	while sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2)) >= distance_tolerance:'''
 	while (target_distance - current_distance >= distance_tolerance):
 		
             #Proportional Controller
