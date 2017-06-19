@@ -79,8 +79,6 @@ def get_goal():
 
 def rotateTo(angle):
 
-	
-
 	temp = getCameraData()
 	print temp
 	if (angle > 0):
@@ -116,7 +114,11 @@ def rotateTo(angle):
 
 	newtemp = getCameraData()
 	print newtemp
+
+	#if ((abs(temp[2]) < abs(newtemp[2])):
 	difference = abs(newtemp[2]) + abs(temp[2])
+	#else:
+		#difference = 
 	print difference
 
 	if (angle > 0):
@@ -133,7 +135,7 @@ def rotateTo(angle):
 				vel_msg = Twist()
 				vel_msg.angular.z = v_z
 				velocity_publisher.publish(vel_msg)
-				print 'hello'
+				#print 'hello'
 				sleep(0.1)
 				temp+=1
 
@@ -168,6 +170,29 @@ def rotateTo(angle):
 			sleep(2)
 			newtemp = getCameraData()
 			difference = abs(newtemp[2]) + abs(temp[2])
+
+def rotateTo_withOdometry(angle):
+	temp = getCameraData()
+	yaw = temp[2]
+	print temp
+
+	#1.2 wasn't the most accurate speed (0.8 had slightly increased accuracy)
+	if (angle > 0):
+		v_z  = 1.2
+	if (angle <0):
+		v_z = 1.2
+
+	clockwise = False; 
+	turn_amount = angle - yaw;
+
+
+
+
+def rotateTo_withOdometryXY(x,y):
+	direction = atan2()
+
+
+
 
 
 
