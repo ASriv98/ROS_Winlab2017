@@ -9,7 +9,8 @@ import math
 from math import radians, degrees
 from time import sleep
 
-	
+listener = tf.TransformListener()
+
 def getYaw(self):
     quaternion = (self.pose.pose.pose.orientation.x, self.pose.pose.pose.orientation.y, self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w)
     euler = tf.transformations.euler_from_quaternion(quaternion)
@@ -47,6 +48,7 @@ def getCameraData():
     	roll = math.degrees(euler[0])
     	pitch = math.degrees(euler[1])
     	yaw = (euler[2])
+        yaw = angle2pi(yaw)
 
 	print "TRANSLATIONAL COMPONENTS"
     	print "X: " + str(x)
@@ -83,75 +85,162 @@ class gotoXY():
 
     def move2goal(self):
 	
-	self_data=getCameraData()      
-        print self_data
 	#goal_pose = Pose()
         goal_pose = Odometry()
-	#print goal_pose
-        goal_pose.pose.pose.position.x = input("Set your x goal: ")
-        goal_pose.pose.pose.position.y = input("Set your y goal: ")
-	current_x = self_data[0]
-	current_y = self_data[1]
-	yaw = self_data[2]
-        #orientation = input("Set your final orientation: ")
-        distance_tolerance = input("Set your tolerance: ")
+        #print goal_pose
+        #goal_pose.pose.pose.position.x = input("Set your x goal: ")
+      #  goal_pose.pose.pose.position.y = input("Set your y goal: ")
+        cur_pos = getCameraData()
+        current_x = cur_pos[0]
+        current_y = cur_pos[1]
+        yaw_camera= cur_pos[2]
+        yaw_camera = angle2pi(yaw_camera)
+            #orientation = input("Set your final orientation: ")
+      #  distance_tolerance = input("Set your tolerance: ")
+        angle_abs = input("Set your angle: ")
         angle_tolerance = input("Set your angle tolerance: ")
+        print angle_abs
         vel_msg = Twist()
-	
-	#yaw = getYaw(self)
-	direction = atan2(goal_pose.pose.pose.position.y-current_y, goal_pose.pose.pose.position.x-current_x)
-	direction = angle2pi(direction)
-	print "direction:" 
-	print direction
+        
+        yaw_odometry = getYaw(self)
+        print "yaw_odom:"
+        print yaw_odometry
+        print "yaw camera"
+        print yaw_camera
 
-	# sets the direction of turn
-	clockwise = False
-	if (direction - yaw) <= math.pi:
-	    if abs(direction - yaw) > 0:
-	        clockwise = False
-	    else:
-	        clockwise = True
-	if (direction - yaw) > math.pi:
-	    if abs(direction - yaw) > 0:
-	        clockwise = True
-	    else:
-	        clockwise = False
+        #direction = atan2(goal_pose.pose.pose.position.y-self.pose.pose.pose.position.y, goal_pose.pose.pose.position.x-self.pose.pose.pose.position.x)
+        #direction = angle2pi(direction)
+       # print "direction:" 
+        #print direction
 
-	#Turns the robot   
-        while abs(yaw - direction) >= angle_tolerance:
-            #angular velocity in the z-axis:
+        difference = angle_abs - yaw_camera
+        print "difference"
+        print difference
+        angle_user = yaw_odometry + difference
+        print "angle"
+        print angle_user
+        angle_user = angle2pi(angle_user)
+
+        angle_tolerance = 0.1
+        # sets the direction of turn
+        clockwise = False
+        if abs(angle_user - yaw_camera) <= math.pi:
+            if angle_user - yaw_camera > 0:
+                clockwise = True
+            else:
+                clockwise = False
+        if abs(angle_user - yaw_camera) > math.pi:
+            if angle_user - yaw_camera > 0:
+                clockwise = False
+            else:
+                clockwise = True
+
+        #Turns the robot   
+        while abs(yaw_odometry - angle_user) >= angle_tolerance:
+                #angular velocity in the z-axis:
             vel_msg.angular.x = 0
             vel_msg.angular.y = 0
-            v_z = 4 * (direction - yaw)
-	    
-	    if abs(v_z) > 1:
-		v_z = 1
-	    if clockwise == True:
-	        v_z = -abs(v_z)
-	    else:
-	        v_z = abs(v_z)
+            v_z = 4 * (angle_user - yaw_odometry)
+            
+            if abs(v_z) > 1:
+                v_z = 1
+            if clockwise == True:
+                v_z = -abs(v_z)
+            else:
+                v_z = abs(v_z)
 
-	    vel_msg.angular.z = v_z 
-	    print "Yaw:" 
-	    print yaw
-	    yaw = getYaw(self)
-	   
+            vel_msg.angular.z = v_z 
+            print "Yaw_Odometry:" 
+            print yaw_odometry
+            print "angle:"
+            print angle_user
+            yaw_odometry = getYaw(self)
+        
             self.velocity_publisher.publish(vel_msg)
             self.rate.sleep()
-	print yaw
-	vel_msg.angular.z = 0
-	self.velocity_publisher.publish(vel_msg)
-        self.rate.sleep()
-        
-	target_distance  = math.sqrt((goal_pose.pose.pose.position.x-self.pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y-self.pose.pose.pose.position.y)**2)
-	current_distance = 0
 
-	while (target_distance - current_distance >= distance_tolerance):
+        print yaw_odometry
+        vel_msg.angular.z = 0
+        self.velocity_publisher.publish(vel_msg)
+        sleep(1)
+
+        cur_pos = getCameraData()
+        yaw_camera = cur_pos[2]
+        yaw_camera = angle2pi(yaw_camera)
+        print yaw_camera
+        sleep(1)
+
+
+        while abs(angle_abs - yaw_camera) > 0.05:
+            new_turn = angle_abs - yaw_camera
+            angle_user = yaw_odometry + new_turn
+            angle_user = angle2pi(angle_user)
+
+            """clockwise = False
+            if abs(angle_user - yaw_camera) <= math.pi:
+                if angle_user - yaw_camera > 0:
+                    clockwise = True
+                else:
+                    clockwise = False
+            if abs(angle_user - yaw_camera) > math.pi:
+                if angle_user - yaw_camera > 0:
+                    clockwise = False
+                else:
+                    clockwise = True"""
+
+            if angle_user > yaw_camera:
+                clockwise = False
+            else: 
+                clockwise = True
+
+
+            while abs(yaw_odometry - angle_user) >= angle_tolerance:
+                #angular velocity in the z-axis:
+                vel_msg.angular.x = 0
+                vel_msg.angular.y = 0
+                v_z = 4 * (angle_user - yaw_odometry)
+            
+                if abs(v_z) > 1:
+                    v_z = 0.5
+                if clockwise == True:
+                    v_z = -abs(v_z)
+                else:
+                    v_z = abs(v_z)
+
+                vel_msg.angular.z = v_z 
+                print "Yaw_Odometry:" 
+                print yaw_odometry
+                print "angle:"
+                print angle_user
+                yaw_odometry = getYaw(self)
+        
+                self.velocity_publisher.publish(vel_msg)
+                self.rate.sleep()
+            print yaw_odometry
+            vel_msg.angular.z = 0
+            self.velocity_publisher.publish(vel_msg)
+            sleep(1)
+
+            cur_pos = getCameraData()
+            yaw_camera = cur_pos[2]
+            yaw_camera = angle2pi(yaw_camera)
+            print yaw_camera
+            sleep(1)  
+
+
+
+        
+
+
+    	"""target_distance  = math.sqrt((goal_pose.pose.pose.position.x-current_x)**2 + (goal_pose.pose.pose.position.y-current_y)**2)
+    	current_distance = 0
+
+	    while (target_distance - current_distance >= distance_tolerance):
 		
             #Proportional Controller
             #linear velocity in the x-axis:
 
-            v_x = 1.5 * sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) + pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2))
+            v_x = 1.5 * sqrt(pow((goal_pose.pose.pose.position.x - current_x), 2) + pow((goal_pose.pose.pose.position.y - current_y), 2))
             if(v_x > 0.5):
                 v_x = 0.5
             vel_msg.linear.x = v_x
@@ -162,7 +251,8 @@ class gotoXY():
 	    print "current_distance:"
 	    print current_distance
 	    #target_distance  = math.sqrt((goal_pose.pose.pose.position.x)**2 + (goal_pose.pose.pose.position.y)**2)
-	    current_distance = math.sqrt((self.pose.pose.pose.position.x-current_x)**2 + (self.pose.pose.pose.position.y-current_y)**2)
+	    self_data = getCameraData()
+	    current_distance = math.sqrt((self_data[0]-current_x)**2 + (self_data[1]-current_y)**2)
 
             #Publishing our vel_msg
             self.velocity_publisher.publish(vel_msg)
@@ -172,7 +262,7 @@ class gotoXY():
         #vel_msg.angular.z = orientation - yaw
 	#(temporary for testing purposes)
 	# vel_msg.angular.z = 0
-        self.velocity_publisher.publish(vel_msg)
+        self.velocity_publisher.publish(vel_msg)"""
 
         rospy.spin()
 
