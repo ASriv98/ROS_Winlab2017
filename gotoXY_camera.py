@@ -14,14 +14,9 @@ listener = tf.TransformListener()
 def getYaw(self):
     quaternion = (self.pose.pose.pose.orientation.x, self.pose.pose.pose.orientation.y, self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w)
     euler = tf.transformations.euler_from_quaternion(quaternion)
-    yaw = angle2pi(euler[2])
+    yaw = euler[2]
     return yaw
 
-    #Changes to 2pi plane
-def angle2pi(angle):
-    if (angle < 0):
-        angle = angle + (2*math.pi)
-    return angle
 
 def getCameraData():
     listener = tf.TransformListener()
@@ -48,7 +43,6 @@ def getCameraData():
     	roll = math.degrees(euler[0])
     	pitch = math.degrees(euler[1])
     	yaw = (euler[2])
-        yaw = angle2pi(yaw)
 
 	print "TRANSLATIONAL COMPONENTS"
     	print "X: " + str(x)
@@ -131,8 +125,7 @@ class gotoXY():
         current_x = cur_pos[0]
         current_y = cur_pos[1]
         yaw_camera= cur_pos[2]
-        yaw_camera = angle2pi(yaw_camera)
-            #orientation = input("Set your final orientation: ")
+        #orientation = input("Set your final orientation: ")
         distance_tolerance = input("Set your tolerance: ")
         angle_abs = input("Set your angle: ")
         #angle_tolerance = input("Set your angle tolerance: ")
@@ -157,7 +150,6 @@ class gotoXY():
         angle_user = yaw_odometry + difference
         print "angle: "
         print angle_user
-        angle_user = angle2pi(angle_user)
 
         angle_tolerance = 0.1
         # sets the direction of turn
@@ -225,7 +217,6 @@ class gotoXY():
         while abs(angle_abs - yaw_camera) > 0.05:
             new_turn = angle_abs - yaw_camera
             angle_user = yaw_odometry + new_turn
-            angle_user = angle2pi(angle_user)
 
             """clockwise = False  ###old way of determining whether clockwise or counterclockwise
             if abs(angle_user - yaw_camera) <= math.pi:
