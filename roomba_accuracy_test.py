@@ -15,6 +15,7 @@ import math
 rospy.init_node("roomba_accuracy_test")
 rate = rospy.Rate(10.0)
 
+
 listener = tf.TransformListener()
 t = tf.Transformer(True, rospy.Duration(20.0))
 
@@ -132,12 +133,10 @@ print i rot is a quaternion containing the rotational components of the translat
 
 def runFor(time, speed):
 	v_z = speed
-	refresh_rate = time / 0.1
-
-	i = 0  
-
-	while (i <= 0): 
-	
+	vel_msg = Twist()
+	vel_msg.angular.z = v_z
+	velocity_publisher.publish(vel_msg)
+	sleep(time)
 
 def initialize():
 	set_transform("frame_1","camera_initial",check_camera())
@@ -157,22 +156,37 @@ with open('generic_accuracy_test.csv', 'ab') as csvfile:
 	initialize()
 	log_and_print(0,'initial_point',get_transform("map","origin"))"""
 
-def log_and_print(trial, speed, time, odom_change, camera_change, battery_voltage)
+def lookup_battery():
+		
+	
+def log_and_print(trial, speed, time, odom_change, camera_change)
 	euler = tf.transformations.euler_from_quaternion(rot)
 	yaw=math.degrees(euler[2])
-	writer.writerow({'trial': trial, 'speed': speed, 'time': time, 'odom_change': odom_change, 'camera_change':camera_change, 'battery_voltage':battery_voltage})
-    print 'trial:' ,trial, 'speed:' ,speed, 'time:' ,time, 'odom_change:' ,odom_change, 'camera_change:',camera_change, 'battery_voltage:' ,battery_voltage 
+	writer.writerow({'trial': trial, 'speed': speed, 'time': time, 'odom_change': odom_change, 'camera_change':camera_change})
+    print 'trial:' ,trial, 'speed:' ,speed, 'time:' ,time, 'odom_change:' ,odom_change, 'camera_change:',camera_change,  
 
 with open ('roomba_accuracy_test.csv', 'ab') as csvfile:
 
-	fieldnames = ['trial', 'speed', 'time', 'odom_change', 'camera_change', 'battery_voltage']
+	fieldnames = ['trial', 'speed', 'time', 'odom_change', 'camera_change']
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
 	initialize()
 	log_and_print(0,'initial_point',get_transform("map","origin"))
 
+trial = 1
+velocities = [0.8,1,2,3,4.5]
+times = [0.1,0.25,0.5,0.75,1]
+	
 
+	initialize()
+	for i in range(0, len(times)):
 
+		for j in range(0, len(velocitiess)):
+			runFor(velocities[j], times[i])
+			set_transform("frame_1", "camera_initial", camera_check())
+			set_transform("frame_2", "odometry_initial", lookup_odom())
+			log_and_print(trial, velocities[i], times[j], get_transform("frame1, camera_final"), get_transform("frame2", "odometry_final") 
+			trial+=1
 
 	for i in range(1,2):
 
@@ -181,6 +195,7 @@ with open ('roomba_accuracy_test.csv', 'ab') as csvfile:
 		y = random.uniform(-0.5,0.5)
 		yaw_deg = random.uniform(-180,180)
 		yaw = math.radians(yaw_deg)
+
 
 		trans = [x,y,0.0]
 		rot = tf.transformations.quaternion_from_euler(0.0,0.0,yaw)
