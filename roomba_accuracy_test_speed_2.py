@@ -13,7 +13,7 @@ import math
 from time import sleep
 
 velocities = [0.8,1,2,3,4.5]
-times = [0.1,0.25,0.5,0.75,1]
+times = [0.3071251481,0.430828592,0.5370787433,0.7670323386,0.843683537,0.9969859338]
 
 fixed_velocity = 2
 
@@ -131,7 +131,7 @@ with open ('Roomba_Accuracy_Test_Trial3.csv', 'ab') as csvfile:
 
 	for time in times:
 
-                for trial in range(0, 10):
+                for trial in range(0, 20):
                         
 			runFor(time, fixed_velocity)
 			sleep(1.5)
