@@ -18,8 +18,8 @@ cost_scaling_factor: 10.0 #A scaling factor to apply to cost values during infla
 #	clearing     : Whether or not this observation should be used to clear out freespace
 #	marking      : Whether or not this observation should be used to mark obstacles.
 
-observation_sources: scan
-scan: {sensor_frame: /laser, topic: /scan, data_type: LaserScan, clearing: true, marking: true}
+#observation_sources: scan
+#scan: {sensor_frame: /laser, topic: /scan, data_type: LaserScan, clearing: true, marking: true}
 
 
 #More information at http://wiki.ros.org/costmap_2d and http://wiki.ros.org/costmap_2d/flat 
