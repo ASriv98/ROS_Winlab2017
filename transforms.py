@@ -11,6 +11,7 @@ import tf2_ros
 
 ns = rospy.get_namespace()
 print ns
+ns = "/roomba/"
 t = tf.Transformer(True, rospy.Duration(20.0))
 broadcaster = tf2_ros.StaticTransformBroadcaster()
 
@@ -43,6 +44,7 @@ def check_for_request():
 		except:
 			(rospy.exceptions.ROSException,rospy.exceptions.ROSInterruptException)
 			continue
+		print "trying"
 	return got_one
 
 def check_stationary():
@@ -66,7 +68,7 @@ def check_camera():
 	while i <= 21.0:
 
 		try:
-			(trans,rot) = listener.lookupTransform('/map', '/alfred', rospy.Time(0))
+			(trans,rot) = listener.lookupTransform('/map', '/roomba', rospy.Time(0))
 			rate.sleep()
 			i += 1.0
 		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
@@ -94,16 +96,16 @@ def check_camera():
 def Main():
 
 	running = False
-	got_one = False
-
+	got_one = True
 	while not rospy.is_shutdown():
 		
 		if running:
+			print "hello"
 			got_one = check_for_request()
 			print "Update requested"
 		if got_one:
 			try:
-				(trans,rot) = listener.lookupTransform( ns+'base_link', ns+'odom', rospy.Time(0))
+				(trans,rot) = listener.lookupTransform('base_link', 'odom', rospy.Time(0))
 			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
 				continue
 
@@ -120,7 +122,7 @@ def Main():
 		
 			static_transformStamped.header.stamp = rospy.Time.now()
 			static_transformStamped.header.frame_id = "/map"
-			static_transformStamped.child_frame_id = ns+"odom"
+			static_transformStamped.child_frame_id = "odom"
 		
 			static_transformStamped.transform.translation.x = trans[0]
 			static_transformStamped.transform.translation.y = trans[1]
