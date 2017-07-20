@@ -161,7 +161,33 @@ def rotateTo(angle):
 			target_achieved = True
 		rate.sleep()
 
+def moveBreak(target_x,target_y):
 
+	trans = [-1.5,8]
+	#(trans, rot) = check_camera()
+	x_init = trans[0]
+	y_init = trans[1]
+	
+	points = []
+
+	total_x = target_x-x_init
+	total_y = target_y-y_init
+	distance = sqrt((total_x)**2+(total_y)**2)
+	step = 0.5
+	d = step
+
+	while d < distance:
+
+		step_x = (d*total_x)/distance
+		step_y = (d*total_y)/distance
+		x = x_init + step_x
+		y = y_init + step_y
+		points.append([x,y])
+		d += step
+
+	points.append([target_x,target_y])
+	print points
+	return points
 
 def move2goal():
 
@@ -172,19 +198,28 @@ def move2goal():
 
 	target_x = input("Set your x: ")  
 	target_y = input("Set your y: ")
+	points = moveBreak(target_x,target_y)
 
-	direction = atan2((target_y-current_y),(target_x-current_x))
-	print degrees(direction)
+	for point in points: 
+
+		point_x = point[0]
+		point_y = point[1]
+
+		(trans, rot) = check_camera()
+		current_x = trans[0]
+		current_y = trans[1]
+		direction = atan2((point_y-current_y),(point_x-current_x))
+		print degrees(direction)
 
 
-	rotateTo(direction)
-	sleep(2)
-	
-	(trans, rot) = check_camera()
-	current_x = trans[0]
-	current_y = trans[1]
-	movement_distance = sqrt((target_x-current_x)**2+(target_y-current_y)**2)
-	moveTo(movement_distance)
+		rotateTo(direction)
+		sleep(2)
+		
+		(trans, rot) = check_camera()
+		current_x = trans[0]
+		current_y = trans[1]
+		movement_distance = sqrt((point_x-current_x)**2+(point_y-current_y)**2)
+		moveTo(movement_distance)
 
 
 while not rospy.is_shutdown():
