@@ -7,6 +7,7 @@ from nav_msgs.msg import Odometry
 import tf
 from math import radians, degrees, sqrt
 from time import sleep
+from ca_msgs.msg import Bumper
 
 
 rospy.init_node("roomba_pid_controller")
@@ -44,6 +45,15 @@ def publish_cmd_vel(lin_vel, angle_vel):
 	vel_msg.angular.z = angle_vel
 	velocity_publisher.publish(vel_msg)
 
+def bumperData():
+	bumper_msg = rospy.wait_for_message("bumper", Bumper)
+	check = False
+
+	if (bumper_msg.is_left_pressed or bumper_msg.is_right_pressed):
+		check = True
+
+	return check 
+
 def moveTo(distance):
 	kp = 0.5
 	ki = 0
@@ -68,6 +78,10 @@ def moveTo(distance):
 		sign = -1
 
 	while not target_achieved:
+		check = bumperData()
+
+		if check == True:
+			break
 
 		(trans,quat) = check_camera()
 		cur_x = trans[0]
@@ -90,6 +104,21 @@ def moveTo(distance):
 			target_achieved = True
 		rate.sleep()
 
+	check = bumperData()
+
+	if check == True:
+		for i in range(0,5):
+			publish_cmd_vel(0,0)
+			rate.sleep()
+		sleep(2)	
+		for i in range(0,10):
+			publish_cmd_vel(-0.2, 0)
+			rate.sleep()
+
+		publish_cmd_vel(0,0)
+
+
+
 def rotateTo(angle):
 	kp = 0.955
 	ki = 0
@@ -105,17 +134,24 @@ def rotateTo(angle):
 	target = angle
 	while not target_achieved:
 
+		check = bumperData()
+		if check == True:
+			break
 		(trans,quat) = check_camera()
 		euler = tf.transformations.euler_from_quaternion(quat)
 		yaw = euler[2]
 		error = target - yaw
+		if error > radians(180):
+			error = error - radians(360)
+		if error < radians(-180):
+			error = error + radians(360)
 		print "Error: "+ str(error)
 		integral += error
 		derivative = error - last_error
 		ang_vel = kp*error + ki*integral + kd*derivative
 		print "Ang_vel" + str(ang_vel)
 		print "Target angle: " + str(degrees(target)) 
-		if abs(error) < 0.006:
+		if abs(error) < 0.01: #old threshold =0.006
 			ang_vel = 0
 			i += 1
 		publish_cmd_vel(0,ang_vel)
@@ -128,7 +164,8 @@ def rotateTo(angle):
 
 
 def move2goal():
-	
+
+		
 	(trans, rot) = check_camera()
 	current_x = trans[0]
 	current_y = trans[1]
