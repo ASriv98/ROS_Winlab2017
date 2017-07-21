@@ -163,8 +163,7 @@ def rotateTo(angle):
 
 def moveBreak(target_x,target_y):
 
-	trans = [-1.5,8]
-	#(trans, rot) = check_camera()
+	(trans, rot) = check_camera()
 	x_init = trans[0]
 	y_init = trans[1]
 	
@@ -173,7 +172,7 @@ def moveBreak(target_x,target_y):
 	total_x = target_x-x_init
 	total_y = target_y-y_init
 	distance = sqrt((total_x)**2+(total_y)**2)
-	step = 0.5
+	step = 1
 	d = step
 
 	while d < distance:
