@@ -12,8 +12,7 @@ from ca_msgs.msg import Bumper
 
 rospy.init_node("roomba_pid_controller")
 
-velocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-pose_pub = rospy.Publisher('/start_pose', Twist, queue_size=10)
+velocity_publisher = rospy.Publisher('roomba3/cmd_vel', Twist, queue_size=10)
 
 rate = rospy.Rate(10.0)
 
@@ -27,7 +26,7 @@ def check_camera():
 	while not got_one:
 
 		try:
-			(t,rot) = listener.lookupTransform('/map', '/roomba', rospy.Time(0))
+			(t,rot) = listener.lookupTransform('/map', '/roomba3', rospy.Time(0))
 			got_one = True
 
 		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
@@ -46,7 +45,7 @@ def publish_cmd_vel(lin_vel, angle_vel):
 	velocity_publisher.publish(vel_msg)
 
 def bumperData():
-	bumper_msg = rospy.wait_for_message("bumper", Bumper)
+	bumper_msg = rospy.wait_for_message("roomba3/bumper", Bumper)
 	check = False
 
 	if (bumper_msg.is_left_pressed or bumper_msg.is_right_pressed):
@@ -120,9 +119,9 @@ def moveTo(distance):
 
 
 def rotateTo(angle):
-	kp = 0.955
-	ki = 0
-	kd = 0
+	kp = 0.573
+	ki = 0.0191
+	kd = 0.42975
 
 	integral = 0
 	last_error = 0
@@ -147,6 +146,8 @@ def rotateTo(angle):
 			error = error + radians(360)
 		print "Error: "+ str(error)
 		integral += error
+		if (error>0 and last_error<0) or (error<0 and last_error>0):
+			intergal = 0
 		derivative = error - last_error
 		ang_vel = kp*error + ki*integral + kd*derivative
 		print "Ang_vel" + str(ang_vel)
