@@ -1,0 +1,15 @@
+[Unit]
+Description=Robot Launching Servive <see /usr/local/bin/robot_launch.sh>
+Requires=network-online.target
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/robot_launch.sh
+ExecStop=/usr/local/bin/robot_launch.sh -1
+StandardOutput=console
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+
