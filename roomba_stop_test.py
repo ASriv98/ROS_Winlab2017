@@ -96,11 +96,15 @@ def runFor(time, speed):
 	velocity_publisher.publish(vel_msg)
 	sleep(time)
 	vel_msg.angular.z = 0
-	velocity_publisher.publish(vel_msg)
-	rate.sleep()
-	(trans,rot) = check_camera()
-	euler = tf.transformations.euler_from_quaternion(rot)
-	yaw = euler[2]
+	yaw = 0
+
+	for i in range(0,5):
+		velocity_publisher.publish(vel_msg)
+		rate.sleep()
+		(trans,rot) = check_camera()
+		euler = tf.transformations.euler_from_quaternion(rot)
+		if i ==0:
+			yaw = euler[2]
 	return yaw
 
 
