@@ -13,7 +13,7 @@ import csv
 import math
 from time import sleep
 
-velocities = 0.25
+velocity = 0.25
 
 rospy.init_node("roomba_stop_test")
 velocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
