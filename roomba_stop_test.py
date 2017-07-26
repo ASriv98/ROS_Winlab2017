@@ -122,8 +122,8 @@ def log_and_print(trial, speed, time, odom_change, camera_change, current_batter
 	odom_yaw = odom_euler[2]
 	camera_euler = tf.transformations.euler_from_quaternion(camera_change[1])
 	camera_yaw = camera_euler[2]
-	stopping_distance - camera_yaw - stop_yaw
-	writer.writerow({'trial': trial, 'speed': speed, 'time': time, 'odom_change': odom_yaw, 'camera_change': camera_yaw, 'current_battery': current_battery})
+	stopping_distance = camera_yaw - stop_yaw
+	writer.writerow({'trial': trial, 'speed': speed, 'time': time, 'odom_change': odom_yaw, 'camera_change': camera_yaw, 'current_battery': current_battery, 'stopping distance': stopping_distance})
 	print 'trial:' ,trial, 'speed:' ,speed, 'time:' ,time, 'odom_change:' ,odom_yaw, 'camera_change:', camera_yaw, 'current_battery', current_battery, 'stopping_distance', stopping_distance
 
 with open ('Roomba_Stop_Test.csv', 'ab') as csvfile:
