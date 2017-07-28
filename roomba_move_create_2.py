@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 import rospy
 from geometry_msgs.msg  import Twist
-#from turtlesim.msg import Pose
+from std_msgs.msg import Bool
 from math import pow,atan2,sqrt
 from nav_msgs.msg import Odometry
 import tf
 from math import radians, degrees, sqrt
 from time import sleep
+from numpy import sign
 from ca_msgs.msg import Bumper
 from breezycreate2 import Robot
+import time
 import csv
 
 
@@ -56,10 +58,10 @@ def bumperData():
 
 	return check 
 
-def pulse(sign):
+def pulse(turn):
 	bot = Robot()
 	bot.playNote('A4', 5)
-	bot.setTurnSpeed(30*sign)
+	bot.setTurnSpeed(30*turn)
 	time.sleep(0.1)
 	bot.setTurnSpeed(0)
 	bot.close()
@@ -130,23 +132,21 @@ def moveTo(distance):
 
 def rotateTo(angle):
 	#kp_max = 1.6
-#kp_min = 0.2
-kp = 0.8
-ki = 0
-kd = 0
+	#kp_min = 0.2
+	kp = 0.8
+	ki = 0
+	kd = 0
 
-window_max = 0.08
-window_min = 0.05
+	window_max = 0.08
+	window_min = 0.05
 
-window = 0.35
+	window = 0.35
 
-accel = 0.001
+	accel = 0.001
 
-integral = 0
-last_error = 0
-derivative = 0
-
-while not rospy.is_shutdown():
+	integral = 0
+	last_error = 0
+	derivative = 0
 
 	sleep(2)
 
@@ -159,15 +159,14 @@ while not rospy.is_shutdown():
 	euler = tf.transformations.euler_from_quaternion(quat)
 	yaw = euler[2]
 	print degrees(yaw)
-	t = input("Target Angle [degrees]:")
-
-	target = radians(t)
+	
+	target = angle
 
 	error = target - yaw
-	
+
 	cur_speed *= sign(error)
 
-		
+	
 	#window = window_max - ((abs(error)/radians(180))*(window_max-window_min))
 
 	while not target_achieved:
@@ -191,41 +190,41 @@ while not rospy.is_shutdown():
 		derivative = error - last_error
 		ang_vel = kp*error + ki*integral + kd*derivative
 		#print "Set Point for Speed: " + str(ang_vel)
-		
+	
 		if ang_vel > 0 and ((ang_vel-cur_speed)>accel):
 			ang_vel = cur_speed + accel
 		if ang_vel < 0 and ((cur_speed-accel) > ang_vel):
 			ang_vel = cur_speed - accel
-		
+	
 		cur_speed = ang_vel
-		
+	
 		print "Target angle: " + str(degrees(target))
 		print "Window: "+ str(window)
 		if abs(error) <= window: #old threshold =0.006
 			for j in range(0,10):
 				ang_vel = 0
-				publish_cmd_vel(ang_vel)
+				publish_cmd_vel(0,ang_vel)
 				rate.sleep()
 			target_achieved = True
 		print "Ang_vel: " + str(ang_vel)
-		publish_cmd_vel(ang_vel)
+		publish_cmd_vel(0,ang_vel)
 		if (last_error >0 and error < 0) or (last_error<0 and error>0) or (abs(error)<0.01):
 			integral = 0
 		last_error = error
 		print "---"
 
 		rate.sleep()
-	
+
 	cmd = Bool()
 	cmd.data = True
 	disable_publisher.publish(cmd)
 	while abs(error)>=radians(0.4):
-		sign =1
+		turn =1
 		if error>0:
-			sign = -1
+			turn = -1
 		else: 
-			sign = 1
-		pulse(sign)
+			turn = 1
+		pulse(turn)
 		rate.sleep()
 		(trans,quat) = check_camera()
 		euler = tf.transformations.euler_from_quaternion(quat)
