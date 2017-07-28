@@ -47,10 +47,10 @@ def publish_PID_vel(left_wheel, right_wheel):
 	vel_msg.linear.x = left_wheel
 	vel_msg.linear.y = right_wheel
 	velocity_publisher.publish(vel_msg)
-def pulse(sign)
+def pulse(sign):
 	bot = Robot()
 	bot.playNote('A4', 5)
-	bot.setTurnSpeed(25*sign)
+	bot.setTurnSpeed(30*sign)
 	time.sleep(0.1)
 	bot.setTurnSpeed(0)
 	bot.close()
@@ -93,13 +93,7 @@ while not rospy.is_shutdown():
 	
 	cur_speed *= sign(error)
 
-	if abs(error) < radians(150):
-		window = 0.3
-	if abs(error) < radians(90):
-		window = 0.25
-	if abs(error) < radians(45):
-		window = 0.05
-	
+		
 	#window = window_max - ((abs(error)/radians(180))*(window_max-window_min))
 
 	while not target_achieved:
@@ -130,23 +124,21 @@ while not rospy.is_shutdown():
 			ang_vel = cur_speed - accel
 		
 		cur_speed = ang_vel
-		if abs(error) > 0.05:
-			i = 0
+		
 		print "Target angle: " + str(degrees(target))
 		print "Window: "+ str(window)
 		if abs(error) <= window: #old threshold =0.006
-			ang_vel = 0
-			publish_cmd_vel(ang_vel)
-		if abs(error) < 0.2:
-			i += 1
+			for j in range(0,10):
+				ang_vel = 0
+				publish_cmd_vel(ang_vel)
+				rate.sleep()
+			target_achieved = True
 		print "Ang_vel: " + str(ang_vel)
 		publish_cmd_vel(ang_vel)
 		if (last_error >0 and error < 0) or (last_error<0 and error>0) or (abs(error)<0.01):
 			integral = 0
 		last_error = error
 		print "---"
-		if i >= 5:
-			target_achieved = True
 
 		rate.sleep()
 	
@@ -156,9 +148,9 @@ while not rospy.is_shutdown():
 	while abs(error)>=radians(0.4):
 		sign =1
 		if error>0:
-			sign = 1
-		else 
 			sign = -1
+		else: 
+			sign = 1
 		pulse(sign)
 		rate.sleep()
 		(trans,quat) = check_camera()
