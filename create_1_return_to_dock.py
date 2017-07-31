@@ -10,14 +10,17 @@ import move_base_msgs.msg
 import actionlib
 from ca_msgs.msg import Bumper
 from nav_msgs.msg import Path
+from std_msgs.msg import Empty
 
-home_x = -3.5
+home_x = -4.5
 home_y = 7.5
-final_orientation = radians(-90)
+final_orientation = -1*radians(90)
 
 rospy.init_node("create_1_return_to_dock")
 
 velocity_publisher = rospy.Publisher('roomba/cmd_vel', Twist, queue_size=10)
+dock_publisher = rospy.Publisher('roomba/dock',Empty, queue_size=10)
+undock_publisher = rospy.Publisher('roomba/undock',Empty, queue_size=10)
 
 rate = rospy.Rate(10.0)
 
@@ -37,8 +40,8 @@ def move_base_client():
 	
 	print "Sending goal..."
 	client.send_goal(goal)
-	client.wait_for_result()
-	result = client.get_result()
+	#client.wait_for_result()
+	#result = client.get_result()
 
 def get_plan():
 
@@ -48,14 +51,15 @@ def get_plan():
 
 	plan = rospy.wait_for_message('move_base/NavfnROS/plan', Path)
 	print "Calculating a new plan..."
-	for i in range(len(plan.poses)):
+	for i in range(1,len(plan.poses)):
 		if i % 200 == 0:
 			point = plan.poses[i]
 			x = point.pose.position.x
 			y = point.pose.position.y
 			new_point = [x,y]
 			new_plan.append(new_point)
-	return new_point
+	new_plan.append([home_x,home_y])
+	return new_plan
 
 def check_camera():
 	
@@ -254,7 +258,15 @@ def move2goal(points):
 		movement_distance = sqrt((point_x-current_x)**2+(point_y-current_y)**2)
 		moveTo(movement_distance)
 
+x = Empty()
+print check_camera()
+move2goal(get_plan())
+sleep(2)
+rotateTo(final_orientation)
+sleep(2)
+dock_publisher.publish(x)
 
-while not rospy.is_shutdown():
-	print check_camera()
-	move2goal()
+
+#while not rospy.is_shutdown():
+#	print check_camera()
+#	move2goal(get_plan)
