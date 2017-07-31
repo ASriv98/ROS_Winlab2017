@@ -66,7 +66,16 @@ def pulse(speed):
 	bot.setTurnSpeed(0)
 	bot.close()
 
+def step(speed):
+	bot = Robot()
+	bot.playNote('A4',5)
+	bot.setForwardSpeed(speed)
+	time.sleep(0.1)
+	bot.setForwardSpeed(0)
+	bot.close()
+
 def moveTo(distance):
+	accel = 0.01
 	kp = 0.5
 	ki = 0
 	kd = 0
@@ -88,12 +97,9 @@ def moveTo(distance):
 		sign = 1
 	if target < 0:
 		sign = -1
+	cur_speed = 0
 
 	while not target_achieved:
-		check = bumperData()
-
-		if check == True:
-			break
 
 		(trans,quat) = check_camera()
 		cur_x = trans[0]
@@ -116,19 +122,69 @@ def moveTo(distance):
 			target_achieved = True
 		rate.sleep()
 
-	check = bumperData()
+	sleep(3)
+	(trans,quat) = check_camera()
+	cur_x = trans[0]
+	cur_y = trans[1]
+	cur_d = sqrt((cur_x - x_init)**2 + (cur_y - y_init)**2)
+	error = abs(target) - cur_d
 
-	if check == True:
-		for i in range(0,5):
-			publish_cmd_vel(0,0)
-			rate.sleep()
-		sleep(2)	
-		for i in range(0,10):
-			publish_cmd_vel(-0.2, 0)
-			rate.sleep()
+	cmd = Bool()
+	cmd.data = True
+	for i in range(5):
+		disable_publisher.publish(cmd)
+		rate.sleep()
 
-		publish_cmd_vel(0,0)
+	failed = 0
+	speed = 25
+	stop_d = 0.01
+	last_error = error
 
+	while abs(error)>=stop_d:
+
+		(trans,quat) = check_camera()
+		euler = tf.transformations.euler_from_quaternion(quat)
+		cur_x = trans[0]
+		cur_y = trans[1]
+		cur_d = sqrt((cur_x - x_init)**2 + (cur_y - y_init)**2)
+		error = abs(target) - cur_d
+
+		if error > 0:
+			sign = -1
+		else:
+			sign = 1
+		derivative = error - last_error
+		if abs(derivative) <= 0.003:
+			failed += 1
+			stop_d = 0.01
+		else:
+			failed = 0
+		if failed >= 5:
+			speed += 1
+			failed = 0
+		step(speed*sign)
+		if abs(derivative) >= stop_d:
+			stop_d = abs(derivative)
+		#ang_vel = (error/radians(180))*0.35
+		print "Error: "+ str(error)
+		print "Derivative: " + str(derivative)
+		print "Speed: " + str(speed)
+		print "Failed Tries: " + str(failed)
+		print "--"
+		last_error = error
+		rate.sleep()
+	cmd.data = False
+	for i in range(5):
+		disable_publisher.publish(cmd)
+		rate.sleep()
+
+	sleep(3)
+	(trans,quat) = check_camera()
+	cur_x = trans[0]
+	cur_y = trans[1]
+	cur_d = sqrt((cur_x - x_init)**2 + (cur_y - y_init)**2)
+	error = abs(target) - cur_d
+	print "Final Error: " + str(fe)
 
 def rotateTo(angle):
 	#kp_max = 1.6
@@ -219,42 +275,53 @@ def rotateTo(angle):
 	cmd.data = True
 	for i in range(5):
 		disable_publisher.publish(cmd)
+		rate.sleep()
 	failed = 0
 	speed = 30
-	stop_d = 0.4
+	stop_d = radians(0.4)
+	(trans,quat) = check_camera()
+        euler = tf.transformations.euler_from_quaternion(quat)
+	yaw = euler[2]
+	error = target - yaw
+	last_error = error
 	while abs(error)>=stop_d:
 		turn = 1
 		(trans,quat) = check_camera()
 		euler = tf.transformations.euler_from_quaternion(quat)
 		yaw = euler[2]
 		error = target - yaw
-		if error>0:
+		if error > 0:
 			turn = -1
-		else: 
+		else:
 			turn = 1
 		if error > radians(180):
 			error = error - radians(360)
 		if error < radians(-180):
 			error = error + radians(360)
 		derivative = error - last_error
-		pulse(turn)
 		if abs(derivative) <= 0.005:
 			failed += 1
+			stop_d = radians(0.04)
 		else:
 			failed = 0
-		if failed > 3:
-			speed += 5
-		speed *= turn
-		pulse(speed)
+		if failed >= 5:
+			speed += 1
+			failed = 0
+		pulse(speed*turn)
 		if abs(derivative) >= stop_d:
 			stop_d = abs(derivative)
 		#ang_vel = (error/radians(180))*0.35
 		print "Error: "+ str(error)
 		print "Derivative: " + str(derivative)
+		print "Speed: " + str(speed)
+		print "Failed Tries: " + str(failed)
+		print "--"
+		last_error = error
 		rate.sleep()
 	cmd.data = False
 	for i in range(5):
 		disable_publisher.publish(cmd)
+		rate.sleep()
 
 	sleep(3)
 	(trans,quat) = check_camera()
