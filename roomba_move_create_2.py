@@ -58,10 +58,10 @@ def bumperData():
 
 	return check 
 
-def pulse(turn):
+def pulse(speed):
 	bot = Robot()
 	bot.playNote('A4', 5)
-	bot.setTurnSpeed(30*turn)
+	bot.setTurnSpeed(speed)
 	time.sleep(0.1)
 	bot.setTurnSpeed(0)
 	bot.close()
@@ -217,27 +217,44 @@ def rotateTo(angle):
 
 	cmd = Bool()
 	cmd.data = True
-	disable_publisher.publish(cmd)
-	while abs(error)>=radians(0.4):
-		turn =1
-		if error>0:
-			turn = -1
-		else: 
-			turn = 1
-		pulse(turn)
-		rate.sleep()
+	for i in range(5):
+		disable_publisher.publish(cmd)
+	failed = 0
+	speed = 30
+	stop_d = 0.4
+	while abs(error)>=stop_d:
+		turn = 1
 		(trans,quat) = check_camera()
 		euler = tf.transformations.euler_from_quaternion(quat)
 		yaw = euler[2]
 		error = target - yaw
+		if error>0:
+			turn = -1
+		else: 
+			turn = 1
 		if error > radians(180):
 			error = error - radians(360)
 		if error < radians(-180):
 			error = error + radians(360)
+		derivative = error - last_error
+		pulse(turn)
+		if abs(derivative) <= 0.005:
+			failed += 1
+		else:
+			failed = 0
+		if failed > 3:
+			speed += 5
+		speed *= turn
+		pulse(speed)
+		if abs(derivative) >= stop_d:
+			stop_d = abs(derivative)
 		#ang_vel = (error/radians(180))*0.35
 		print "Error: "+ str(error)
+		print "Derivative: " + str(derivative)
+		rate.sleep()
 	cmd.data = False
-	disable_publisher.publish(cmd)
+	for i in range(5):
+		disable_publisher.publish(cmd)
 
 	sleep(3)
 	(trans,quat) = check_camera()
