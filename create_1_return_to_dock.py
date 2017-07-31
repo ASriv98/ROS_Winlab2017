@@ -6,10 +6,16 @@ from nav_msgs.msg import Odometry
 import tf
 from math import radians, degrees, sqrt
 from time import sleep
+import move_base_msgs.msg
+import actionlib
 from ca_msgs.msg import Bumper
+from nav_msgs.msg import Path
 
+home_x = -3.5
+home_y = 7.5
+final_orientation = radians(-90)
 
-rospy.init_node("roomba_pid_controller")
+rospy.init_node("create_1_return_to_dock")
 
 velocity_publisher = rospy.Publisher('roomba/cmd_vel', Twist, queue_size=10)
 
@@ -17,6 +23,39 @@ rate = rospy.Rate(10.0)
 
 listener = tf.TransformListener()
 
+def move_base_client():
+
+	client = actionlib.SimpleActionClient('move_base', move_base_msgs.msg.MoveBaseAction)
+	client.wait_for_server()
+	goal = move_base_msgs.msg.MoveBaseGoal()
+	goal.target_pose.header.frame_id = "map"
+	goal.target_pose.header.stamp = rospy.Time.now()
+	goal.target_pose.pose.position.x = home_x
+	goal.target_pose.pose.position.y = home_y
+	goal.target_pose.pose.orientation.z = 0.0
+	goal.target_pose.pose.orientation.w = 1.0
+	
+	print "Sending goal..."
+	client.send_goal(goal)
+	client.wait_for_result()
+	result = client.get_result()
+
+def get_plan():
+
+	new_plan = []
+
+	move_base_client()
+
+	plan = rospy.wait_for_message('move_base/NavfnROS/plan', Path)
+	print "Calculating a new plan..."
+	for i in range(len(plan.poses)):
+		if i % 200 == 0:
+			point = plan.poses[i]
+			x = point.pose.position.x
+			y = point.pose.position.y
+			new_point = [x,y]
+			new_plan.append(new_point)
+	return new_point
 
 def check_camera():
 	
