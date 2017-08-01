@@ -11,6 +11,7 @@ import actionlib
 from ca_msgs.msg import Bumper
 from nav_msgs.msg import Path
 from std_msgs.msg import Empty
+import signal 
 
 home_x = -4.5
 home_y = 7.5
@@ -25,6 +26,14 @@ undock_publisher = rospy.Publisher('roomba/undock',Empty, queue_size=10)
 rate = rospy.Rate(10.0)
 
 listener = tf.TransformListener()
+
+class TimeoutException(Exception):   # Custom exception class
+    pass
+
+def timeout_handler(signum, frame):   # Custom signal handler
+    raise TimeoutException
+
+signal.signal(signal.SIGALRM, timeout_handler)
 
 def move_base_client():
 
@@ -239,6 +248,8 @@ def move2goal(points):
 
 	for point in points: 
 
+		signal.alarm(10)    
+
 		point_x = point[0]
 		point_y = point[1]
 
@@ -256,7 +267,12 @@ def move2goal(points):
 		current_x = trans[0]
 		current_y = trans[1]
 		movement_distance = sqrt((point_x-current_x)**2+(point_y-current_y)**2)
-		moveTo(movement_distance)
+		try:
+			moveTo(movement_distance)
+		except TimeoutException:
+			continue
+		else:
+			signal.alarm(0)
 
 x = Empty()
 print check_camera()
