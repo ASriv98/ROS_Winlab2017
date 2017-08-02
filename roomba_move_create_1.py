@@ -25,14 +25,11 @@ def get_plan():
 
 	plan = rospy.wait_for_message('move_base/NavfnROS/plan', Path)
 	print "Calculating a new plan..."
-	for i in range(1,len(plan.poses)):
-		if i % 200 == 0:
-			point = plan.poses[i]
-			x = point.pose.position.x
-			y = point.pose.position.y
-			new_point = [x,y]
-			new_plan.append(new_point)
-	new_plan.append([home_x,home_y])
+	for point in plan.poses:
+		x = point.pose.position.x
+		y = point.pose.position.y
+		new_point = [x,y]
+		new_plan.append(new_point)
 	return new_plan
 
 def check_camera():
