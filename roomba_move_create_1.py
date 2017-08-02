@@ -17,6 +17,23 @@ rate = rospy.Rate(10.0)
 
 listener = tf.TransformListener()
 
+def get_plan():
+
+	new_plan = []
+
+	move_base_client()
+
+	plan = rospy.wait_for_message('move_base/NavfnROS/plan', Path)
+	print "Calculating a new plan..."
+	for i in range(1,len(plan.poses)):
+		if i % 200 == 0:
+			point = plan.poses[i]
+			x = point.pose.position.x
+			y = point.pose.position.y
+			new_point = [x,y]
+			new_plan.append(new_point)
+	new_plan.append([home_x,home_y])
+	return new_plan
 
 def check_camera():
 	
@@ -204,15 +221,15 @@ def moveBreak(target_x,target_y):
 	print points
 	return points
 
-def move2goal():
+def move2goal(way_point):
 
 		
 	(trans, rot) = check_camera()
 	current_x = trans[0]
 	current_y = trans[1]
 
-	target_x = input("Set your x: ")  
-	target_y = input("Set your y: ")
+	target_x = way_point[0]
+	target_y = way_point[1]
 	points = moveBreak(target_x,target_y)
 
 	for point in points: 
@@ -239,4 +256,7 @@ def move2goal():
 
 while not rospy.is_shutdown():
 	print check_camera()
-	move2goal()
+	
+	new_plan = get_plan()
+	for way_point in new_plan:
+		move2goal(way_point)
