@@ -13,6 +13,8 @@ from breezycreate2 import Robot
 import time
 import csv
 
+bot = Robot()
+bot.close()
 
 rospy.init_node("roomba_pid_controller")
 
@@ -59,24 +61,29 @@ def bumperData():
 	return check 
 
 def pulse(speed):
-	bot = Robot()
+	global bot
+	#bot = Robot()
 	bot.playNote('A4', 5)
 	bot.setTurnSpeed(speed)
 	time.sleep(0.1)
 	bot.setTurnSpeed(0)
+	#time.sleep(0.1)
 	bot.close()
 
 def step(speed):
-	bot = Robot()
+	global bot
+	#bot = Robot()
 	bot.playNote('A4',5)
 	bot.setForwardSpeed(speed)
 	time.sleep(0.1)
 	bot.setForwardSpeed(0)
-	bot.close()
+	#bot.close()
 
 def moveTo(distance):
-	accel = 0.01
-	kp = 0.5
+	time.sleep(0.5)
+	global bot
+	accel = 0.001
+	kp = 0.3
 	ki = 0
 	kd = 0
 	integral = 0
@@ -87,7 +94,7 @@ def moveTo(distance):
 
 	target_achieved = False
 
-	target = distance 
+	target = distance
 	(trans,rot) = check_camera()
 	x_init = trans[0]
 	y_init = trans[1]
@@ -97,7 +104,7 @@ def moveTo(distance):
 		sign = 1
 	if target < 0:
 		sign = -1
-	cur_speed = 0
+	cur_speed = 0.15*sign
 
 	while not target_achieved:
 
@@ -112,14 +119,18 @@ def moveTo(distance):
 		lin_vel = kp*error + ki*integral + kd*derivative
 		lin_vel *= sign
 		print "Lin_vel: " + str(lin_vel)
-		if abs(error) < 0.01:
+		if lin_vel > 0 and (cur_speed + accel <= lin_vel):
+			cur_speed += accel
+		lin_vel = cur_speed
+		if abs(error) < 0.30:
 			lin_vel = 0
-			i += 1
-		publish_cmd_vel(lin_vel,0)
+			for k in range(5):
+				publish_cmd_vel(0,0.0)
+				rate.sleep()
+			target_achieved = True
+		publish_cmd_vel(lin_vel,0.0)
 		last_error = error
 		print "---"
-		if i >= 5:
-			target_achieved = True
 		rate.sleep()
 
 	sleep(3)
@@ -134,46 +145,59 @@ def moveTo(distance):
 	for i in range(5):
 		disable_publisher.publish(cmd)
 		rate.sleep()
-
+	bot = Robot()
 	failed = 0
-	speed = 25
+	start_speed = 50
 	stop_d = 0.01
 	last_error = error
-
-	while abs(error)>=stop_d:
+	initial_sign = sign(error)
+	tried = 0
+	speed = start_speed
+	attempts = 0
+	target_achieved = False
+	while not target_achieved:
 
 		(trans,quat) = check_camera()
-		euler = tf.transformations.euler_from_quaternion(quat)
 		cur_x = trans[0]
 		cur_y = trans[1]
 		cur_d = sqrt((cur_x - x_init)**2 + (cur_y - y_init)**2)
 		error = abs(target) - cur_d
-
-		if error > 0:
-			sign = -1
-		else:
-			sign = 1
+		if abs(error) <= stop_d:
+			target_achieved = True
+		if sign(error) != initial_sign:
+			print "***Overshot, decreasing speed***"
+			speed = start_speed
+			initial_sign = sign(error)
+			failed = 0
 		derivative = error - last_error
-		if abs(derivative) <= 0.003:
+		if abs(derivative) <= 0.005:
 			failed += 1
-			stop_d = 0.01
+			#stop_d = 0.01
 		else:
 			failed = 0
 		if failed >= 5:
 			speed += 1
 			failed = 0
-		step(speed*sign)
-		if abs(derivative) >= stop_d:
-			stop_d = abs(derivative)
+		step(speed*sign(error))
+		#if abs(derivative) >= stop_d:
+		#	stop_d = 0.5*abs(derivative)
 		#ang_vel = (error/radians(180))*0.35
 		print "Error: "+ str(error)
 		print "Derivative: " + str(derivative)
-		print "Speed: " + str(speed)
+		print "Speed: " + str(speed*sign)
 		print "Failed Tries: " + str(failed)
 		print "--"
 		last_error = error
 		rate.sleep()
+		tried += 1
+		if tried % 5 == 0:
+			time.sleep(1)
+		attempts += 1
+		if attempts >= 500:
+			target_achieved = True
+
 	cmd.data = False
+	bot.close()
 	for i in range(5):
 		disable_publisher.publish(cmd)
 		rate.sleep()
@@ -184,12 +208,13 @@ def moveTo(distance):
 	cur_y = trans[1]
 	cur_d = sqrt((cur_x - x_init)**2 + (cur_y - y_init)**2)
 	error = abs(target) - cur_d
-	print "Final Error: " + str(fe)
+	print "Final Error: " + str(error)
 
-def rotateTo(angle):
+def rotateTo(x,y):
+	time.sleep(0.5)
 	#kp_max = 1.6
 	#kp_min = 0.2
-	kp = 0.8
+	kp = 0.6
 	ki = 0
 	kd = 0
 
@@ -208,21 +233,22 @@ def rotateTo(angle):
 
 	i = 0
 
-	cur_speed = 0.25
+	cur_speed = 0.50
 
 	target_achieved = False
 	(trans,quat) = check_camera()
 	euler = tf.transformations.euler_from_quaternion(quat)
 	yaw = euler[2]
 	print degrees(yaw)
-	
+	cur_x = trans[0]
+	cur_y = trans[1]
+	angle = atan2((y-cur_y),(x-cur_x))
 	target = angle
 
 	error = target - yaw
 
 	cur_speed *= sign(error)
 
-	
 	#window = window_max - ((abs(error)/radians(180))*(window_max-window_min))
 
 	while not target_achieved:
@@ -230,10 +256,14 @@ def rotateTo(angle):
 		(trans,quat) = check_camera()
 		euler = tf.transformations.euler_from_quaternion(quat)
 		yaw = euler[2]
+		cur_x = trans[0]
+		cur_y = trans[1]
+		target = atan2((y-cur_y),(x-cur_x))
 		error = target - yaw
+		print error
 		if error > radians(180):
 			error = error - radians(360)
-		if error < radians(-180):
+		if error < -radians(180):
 			error = error + radians(360)
 		#ang_vel = (error/radians(180))*0.35
 		print "Error: "+ str(error)
@@ -246,14 +276,14 @@ def rotateTo(angle):
 		derivative = error - last_error
 		ang_vel = kp*error + ki*integral + kd*derivative
 		#print "Set Point for Speed: " + str(ang_vel)
-	
+
 		if ang_vel > 0 and ((ang_vel-cur_speed)>accel):
 			ang_vel = cur_speed + accel
 		if ang_vel < 0 and ((cur_speed-accel) > ang_vel):
 			ang_vel = cur_speed - accel
-	
+
 		cur_speed = ang_vel
-	
+
 		print "Target angle: " + str(degrees(target))
 		print "Window: "+ str(window)
 		if abs(error) <= window: #old threshold =0.006
@@ -276,40 +306,57 @@ def rotateTo(angle):
 	for i in range(5):
 		disable_publisher.publish(cmd)
 		rate.sleep()
+	bot = Robot()
 	failed = 0
-	speed = 30
+	start_speed = 35
 	stop_d = radians(0.4)
 	(trans,quat) = check_camera()
-        euler = tf.transformations.euler_from_quaternion(quat)
+	euler = tf.transformations.euler_from_quaternion(quat)
 	yaw = euler[2]
 	error = target - yaw
 	last_error = error
-	while abs(error)>=stop_d:
-		turn = 1
+	speed = start_speed
+	initial_sign = sign(error)
+	target_achieved = False
+	attempts = 0
+	
+	while not target_achieved:
+
 		(trans,quat) = check_camera()
 		euler = tf.transformations.euler_from_quaternion(quat)
+		cur_x = trans[0]
+		cur_y = trans[1]
+		target = atan2((y-cur_y),(x-cur_x))
 		yaw = euler[2]
 		error = target - yaw
+		if abs(error) <= stop_d:
+			target_achieved = True
+			speed = 0
+		if error > radians(180):
+			error = error - radians(180)
+		if error < radians(-180):
+			error = error + radians(180)
 		if error > 0:
 			turn = -1
 		else:
 			turn = 1
-		if error > radians(180):
-			error = error - radians(360)
-		if error < radians(-180):
-			error = error + radians(360)
 		derivative = error - last_error
+		if sign(error) != initial_sign:
+			print "***Overshot, resetting speed***"
+			speed = initial_speed
+			initial_sign = sign(error)
+			failed = 0
 		if abs(derivative) <= 0.005:
 			failed += 1
 			stop_d = radians(0.04)
 		else:
 			failed = 0
-		if failed >= 5:
+		if failed >= 10:
 			speed += 1
 			failed = 0
 		pulse(speed*turn)
 		if abs(derivative) >= stop_d:
-			stop_d = abs(derivative)
+			stop_d = 0.5*abs(derivative)
 		#ang_vel = (error/radians(180))*0.35
 		print "Error: "+ str(error)
 		print "Derivative: " + str(derivative)
@@ -317,7 +364,11 @@ def rotateTo(angle):
 		print "Failed Tries: " + str(failed)
 		print "--"
 		last_error = error
+		attempts += 1
+		if attempts >= 500:
+			target_achieved = True
 		rate.sleep()
+	bot.close()
 	cmd.data = False
 	for i in range(5):
 		disable_publisher.publish(cmd)
@@ -331,14 +382,12 @@ def rotateTo(angle):
 	print "Final Error: " + str(fe)
 	print degrees(fe)
 
-
-
 def moveBreak(target_x,target_y):
 
 	(trans, rot) = check_camera()
 	x_init = trans[0]
 	y_init = trans[1]
-	
+
 	points = []
 
 	total_x = target_x-x_init
@@ -390,9 +439,8 @@ def move2goal():
 		print degrees(direction)
 
 
-		rotateTo(direction)
+		rotateTo(point_x,point_y)
 		sleep(2)
-		
 		(trans, rot) = check_camera()
 		current_x = trans[0]
 		current_y = trans[1]
