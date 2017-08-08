@@ -3,6 +3,7 @@ import rospy
 from geometry_msgs.msg  import Twist
 from math import pow,atan2,sqrt
 from nav_msgs.msg import Odometry
+from numpy import sign
 import tf
 from math import radians, degrees, sqrt
 from time import sleep
@@ -52,10 +53,70 @@ def bumperData():
 
 	return check 
 
+def rotateTo(angle):
+	tries = 0
+	kp = 0.35
+	ki = 0.06
+	kd = 0.75
+	
+	integral = 0
+	last_error = angle
+	derivative = 0
+	i = 0
+
+	target_achieved = False
+
+	target = angle
+	while not target_achieved:
+
+		#check = bumperData()
+		#if check == True:
+		#	break
+		(trans,quat) = check_camera()
+		euler = tf.transformations.euler_from_quaternion(quat)
+		yaw = euler[2]
+		error = target - yaw
+		if error > radians(180):
+			error = error - radians(360)
+		if error < radians(-180):
+			error = error + radians(360)
+		print "Error: "+ str(error)
+		integral += error
+		if (error > 0 and last_error < 0) or (error<0 and last_error>0):
+			intergal = 0
+			print "Flipped INTEGRAL***"
+		derivative = error - last_error
+		if abs(derivative)*1000.0 > 1.5:
+			integral = 0
+			i = 0
+
+		ang_vel = kp*error + ki*integral + kd*derivative
+		print "Integral: " + str(integral)
+		print "Derivative<x1000>: " + str(derivative*1000.0)
+		print "Ang_vel: " + str(ang_vel)
+		print "Target angle: " + str(degrees(target))
+		print "Current angle: " + str(degrees(yaw))
+		if abs(error) <= radians(1): #old threshold =0.006
+			integral = 0
+			#ang_vel = 0
+			i += 1
+		publish_cmd_vel(0,ang_vel)
+		last_error = error
+		print "---"
+		if i >= 10:
+			target_achieved = True
+		tries += 1
+		if tries >= 500:
+			target_achieved = True
+			print "Giving up"
+			publish_cmd_vel(0,0)
+		rate.sleep()
+
+
 def moveTo(distance):
 	tries = 0
 	kp = 0.35
-	ki = 0.01
+	ki = 0.001
 	kd = 0
 	integral = 0
 	last_error = 0
@@ -78,10 +139,10 @@ def moveTo(distance):
 
 	while not target_achieved:
 		
-		check = bumperData()
+		#check = bumperData()
 
-		if check == True:
-			break
+		#if check == True:
+		#	break
 
 		(trans,quat) = check_camera()
 		cur_x = trans[0]
@@ -108,7 +169,7 @@ def moveTo(distance):
 			target_achieved = True
 			print "Giving up"
 			publish_cmd_vel(0,0)
-
+	"""
 	check = bumperData()
 
 	if check == True:
@@ -121,61 +182,7 @@ def moveTo(distance):
 			rate.sleep()
 
 		publish_cmd_vel(0,0)
-
-
-
-def rotateTo(angle):
-	tries = 0
-	kp = 0.32
-	ki = 0.009
-	kd = 0
-	
-	integral = 0
-	last_error = 0
-	derivative = 0
-	i = 0
-
-	target_achieved = False
-
-	target = angle
-	while not target_achieved:
-
-		check = bumperData()
-		if check == True:
-			break
-		(trans,quat) = check_camera()
-		euler = tf.transformations.euler_from_quaternion(quat)
-		yaw = euler[2]
-		error = target - yaw
-		if error > radians(180):
-			error = error - radians(360)
-		if error < radians(-180):
-			error = error + radians(360)
-		print "Error: "+ str(error)
-		integral += error
-		if (error > 0 and last_error < 0) or (error<0 and last_error>0):
-			intergal = 0
-			print "Flipped INTEGRAL***"
-		derivative = error - last_error
-		ang_vel = kp*error + ki*integral + kd*derivative
-		print "Integral: " + str(integral)
-		print "Ang_vel: " + str(ang_vel)
-		print "Target angle: " + str(degrees(target)) 
-		if abs(error) < 0.01: #old threshold =0.006
-			integral = 0
-			ang_vel = 0
-			i += 1
-		publish_cmd_vel(0,ang_vel)
-		last_error = error
-		print "---"
-		if i >= 5:
-			target_achieved = True
-		rate.sleep()
-		tries += 1
-		if tries >= 500:
-			target_achieved = True
-			print "Giving up"
-			publish_cmd_vel(0,0)
+	"""
 
 def moveBreak(target_x,target_y):
 
@@ -224,10 +231,10 @@ def move2goal():
 		current_x = trans[0]
 		current_y = trans[1]
 		direction = atan2((point_y-current_y),(point_x-current_x))
+		rate.sleep()
 		print degrees(direction)
-
-
 		rotateTo(direction)
+		"""
 		sleep(2)
 		
 		(trans, rot) = check_camera()
@@ -235,7 +242,7 @@ def move2goal():
 		current_y = trans[1]
 		movement_distance = sqrt((point_x-current_x)**2+(point_y-current_y)**2)
 		moveTo(movement_distance)
-
+		"""
 
 while not rospy.is_shutdown():
 	print check_camera()
