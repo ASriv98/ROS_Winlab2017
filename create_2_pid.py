@@ -63,8 +63,8 @@ def rotateTo(angle):
 	last_error = angle
 	derivative = 0
 	i = 0
-	accel = 0.001
-	curr_speed = 0.5
+	accel = 0.002
+	cur_speed = 0.5
 
 	target_achieved = False
 
@@ -83,7 +83,7 @@ def rotateTo(angle):
 		if error < radians(-180):
 			error = error + radians(360)
 		print "Error: "+ str(error)
-		curr_speed *=sign(error)
+		cur_speed *=sign(error)
 		integral += error
 		if (error > 0 and last_error < 0) or (error<0 and last_error>0):
 			intergal = 0
@@ -135,7 +135,7 @@ def moveTo(distance):
 	integral = 0
 	last_error = 0
 	derivative = 0
-	accel = 0.001
+	accel = 0.002
 
 	i = 0
 
@@ -147,7 +147,7 @@ def moveTo(distance):
 	y_init = trans[1]
 
 
-	curr_speed = 0.25
+	cur_speed = 0.25
 
 
 	while not target_achieved:
@@ -162,6 +162,7 @@ def moveTo(distance):
 		cur_y = trans[1]
 		cur_d = sqrt((cur_x - x_init)**2 + (cur_y - y_init)**2)
 		error = abs(target) - cur_d
+		cur_speed = sign(error)
 		print "Error: "+ str(error)
 		integral += error
 		derivative = error - last_error
@@ -169,6 +170,12 @@ def moveTo(distance):
 		lin_vel *= sign(error)
 		if lin_vel > 0 and (cur_speed + accel <= lin_vel):
 			cur_speed += accel
+		if lin_vel < 0 and (cur_speed + accel <=lin_vel):
+			cur_speed -= accel
+		if lin_vel > 0 and (cur_speed + accel >= lin_vel):
+			cur_speed -= accel
+		if lin_vel < 0 and (cur_speed + accel >lin_vel):
+			cur_speed -=accel
 		lin_vel = curr_speed
 		print "Lin_vel: " + str(lin_vel)
 		if abs(error) < 0.01:
