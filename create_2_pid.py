@@ -55,14 +55,16 @@ def bumperData():
 
 def rotateTo(angle):
 	tries = 0
-	kp = 0.35
+	kp = 0.335
 	ki = 0.06
-	kd = 0.75
+	kd = 0.73
 	
 	integral = 0
 	last_error = angle
 	derivative = 0
 	i = 0
+	accel = 0.001
+	curr_speed = 0.5
 
 	target_achieved = False
 
@@ -81,6 +83,7 @@ def rotateTo(angle):
 		if error < radians(-180):
 			error = error + radians(360)
 		print "Error: "+ str(error)
+		curr_speed *=sign(error)
 		integral += error
 		if (error > 0 and last_error < 0) or (error<0 and last_error>0):
 			intergal = 0
@@ -91,6 +94,13 @@ def rotateTo(angle):
 			i = 0
 
 		ang_vel = kp*error + ki*integral + kd*derivative
+
+		if ang_vel > 0 and ((ang_vel-cur_speed)>accel):
+			ang_vel = cur_speed + accel
+		if ang_vel < 0 and ((cur_speed-accel) > ang_vel):
+			ang_vel = cur_speed - accel
+
+		cur_speed = ang_vel
 		print "Integral: " + str(integral)
 		print "Derivative<x1000>: " + str(derivative*1000.0)
 		print "Ang_vel: " + str(ang_vel)
@@ -100,11 +110,14 @@ def rotateTo(angle):
 			integral = 0
 			#ang_vel = 0
 			i += 1
+		if i >=5:
+			target_achieved = True
+			for j in range(0,5):
+				ang_vel = 0
+				publish_cmd_vel(0,ang_vel)
 		publish_cmd_vel(0,ang_vel)
 		last_error = error
 		print "---"
-		if i >= 10:
-			target_achieved = True
 		tries += 1
 		if tries >= 500:
 			target_achieved = True
@@ -115,12 +128,14 @@ def rotateTo(angle):
 
 def moveTo(distance):
 	tries = 0
-	kp = 0.35
-	ki = 0.001
-	kd = 0
+	kp = 0.355
+
+	ki = 0.006
+	kd = 0.8
 	integral = 0
 	last_error = 0
 	derivative = 0
+	accel = 0.001
 
 	i = 0
 
@@ -132,10 +147,8 @@ def moveTo(distance):
 	y_init = trans[1]
 
 
-	if target >= 0:
-		sign = 1
-	if target < 0:
-		sign = -1
+	curr_speed = 0.25
+
 
 	while not target_achieved:
 		
@@ -153,16 +166,23 @@ def moveTo(distance):
 		integral += error
 		derivative = error - last_error
 		lin_vel = kp*error + ki*integral + kd*derivative
-		lin_vel *= sign
+		lin_vel *= sign(error)
+		if lin_vel > 0 and (cur_speed + accel <= lin_vel):
+			cur_speed += accel
+		lin_vel = curr_speed
 		print "Lin_vel: " + str(lin_vel)
 		if abs(error) < 0.01:
-			lin_vel = 0
 			i += 1
+		if i >= 5:
+			lin_vel = 0
+			target_achieved = True
+			for j in range(0,5):
+				publish_cmd_vel(0,lin_vel)
+			break
 		publish_cmd_vel(lin_vel,0)
 		last_error = error
 		print "---"
-		if i >= 5:
-			target_achieved = True
+
 		rate.sleep()
 		tries += 1
 		if tries >= 500:
@@ -234,7 +254,7 @@ def move2goal():
 		rate.sleep()
 		print degrees(direction)
 		rotateTo(direction)
-		"""
+		
 		sleep(2)
 		
 		(trans, rot) = check_camera()
@@ -242,7 +262,7 @@ def move2goal():
 		current_y = trans[1]
 		movement_distance = sqrt((point_x-current_x)**2+(point_y-current_y)**2)
 		moveTo(movement_distance)
-		"""
+		sleep(2)
 
 while not rospy.is_shutdown():
 	print check_camera()
