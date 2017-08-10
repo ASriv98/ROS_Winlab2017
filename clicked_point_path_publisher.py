@@ -8,7 +8,7 @@ import threading
 
 rospy.init_node("create_1_point_path")
 
-plan_publisher = rospy.Publisher('/temporary_path', Path, queue_size=10)
+plan_publisher = rospy.Publisher('/roomba1/temporary_path', Path, queue_size=10)
 
 rate = rospy.Rate(10.0)
 
