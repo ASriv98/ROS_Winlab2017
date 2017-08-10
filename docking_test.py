@@ -38,8 +38,9 @@ while not rospy.is_shutdown():
 		undock_publisher.publish(x)
 		rate.sleep(2)
 		vel_msg.linear.x = -0.2
-		velocity_publisher.publish(vel_msg)
-		rate.sleep(2)
+		for i in range(0,5)
+			velocity_publisher.publish(vel_msg)
+			rate.sleep(2)
 	count+=1
 	if count >= 50:
 		break
