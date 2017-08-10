@@ -25,7 +25,7 @@ def check_camera():
 	while not got_one:
 
 		try:
-			(t,rot) = listener.lookupTransform('/map', '/roomba', rospy.Time(0))
+			(t,rot) = listener.lookupTransform('/map', '/roomba3', rospy.Time(0))
 			got_one = True
 
 		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
@@ -44,7 +44,7 @@ def publish_cmd_vel(lin_vel, angle_vel):
 	velocity_publisher.publish(vel_msg)
 
 def bumperData():
-	bumper_msg = rospy.wait_for_message("roomba/bumper", Bumper)
+	bumper_msg = rospy.wait_for_message("roomba3/bumper", Bumper)
 	check = False
 
 	if (bumper_msg.is_left_pressed or bumper_msg.is_right_pressed):
@@ -126,8 +126,8 @@ def moveTo(distance):
 
 def rotateTo(angle):
 	tries = 0
-	kp = 0.955
-	ki = 0.0
+	kp = 0.8
+	ki = 0.001
 	kd = 0.0
 	
 	integral = 0
