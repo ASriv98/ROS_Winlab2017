@@ -52,7 +52,7 @@ def get_plan():
 
 	new_plan = []
 
-	plan = rospy.wait_for_message('/create_1_waypoints', Path)
+	plan = rospy.wait_for_message('roomba3/waypoints', Path)
 	print "Calculating a new plan..."
 	for point in plan.poses:
 		x = point.pose.position.x
