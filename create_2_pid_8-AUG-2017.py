@@ -55,9 +55,9 @@ def bumperData():
 
 def rotateTo(angle):
 	tries = 0
-	kp = 0.335
-	ki = 0.06
-	kd = 0.73
+	kp = 0.225
+	ki = 0.08
+	kd = 0
 	
 	integral = 0
 	last_error = angle
@@ -117,10 +117,9 @@ def rotateTo(angle):
 
 def moveTo(distance):
 	tries = 0
-	kp = 0.355
-
-	ki = 0.001
-	kd = 0.42
+	kp = 0.1
+	ki = 0.01
+	kd = 0
 	integral = 0
 	last_error = 0
 	derivative = 0
@@ -133,15 +132,13 @@ def moveTo(distance):
 	(trans,rot) = check_camera()
 	x_init = trans[0]
 	y_init = trans[1]
-
-
+	"""
 	if target >= 0:
-		sign = 1
+		turn = 1
 	if target < 0:
-		sign = -1
-
+		turn = -1
+	"""
 	while not target_achieved:
-		
 		#check = bumperData()
 
 		#if check == True:
@@ -155,9 +152,16 @@ def moveTo(distance):
 		print "Error: "+ str(error)
 		integral += error
 		derivative = error - last_error
+		if (error > 0 and last_error <0) or (error < 0 and last_error>0):
+			integral = 0
+		if abs(derivative) *1000.0 > 1.5:
+			integral = 0
+			i=0
 		lin_vel = kp*error + ki*integral + kd*derivative
-		lin_vel *= sign
+
 		print "Lin_vel: " + str(lin_vel)
+		print "Derivative: " + str(derivative)
+		print "Integral: " + str(integral)
 		if abs(error) < 0.01:
 			lin_vel = 0
 			i += 1
@@ -168,12 +172,12 @@ def moveTo(distance):
 			target_achieved = True
 			for j in range(0,5):
 				publish_cmd_vel(0,0)
-		rate.sleep()
 		tries += 1
 		if tries >= 500:
 			target_achieved = True
 			print "Giving up"
 			publish_cmd_vel(0,0)
+		rate.sleep()
 	"""
 	check = bumperData()
 
@@ -181,7 +185,7 @@ def moveTo(distance):
 		for i in range(0,5):
 			publish_cmd_vel(0,0)
 			rate.sleep()
-		sleep(2)	
+		sleep(2)
 		for i in range(0,10):
 			publish_cmd_vel(-0.2, 0)
 			rate.sleep()
