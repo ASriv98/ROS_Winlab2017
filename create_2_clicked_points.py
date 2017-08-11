@@ -8,8 +8,8 @@ import threading
 
 rospy.init_node("create_2_clicked_points")
 
-plan_publisher = rospy.Publisher'(/roomba3/waypoints', Path, queue_size=10)
-temp_plan_publisher = rospy.Publisher'(/roomba3/temporary_path', Path, queue_size=10)
+plan_publisher = rospy.Publisher('/roomba3/waypoints', Path, queue_size=10)
+temp_plan_publisher = rospy.Publisher('/roomba3/temporary_path', Path, queue_size=10)
 
 rate = rospy.Rate(10.0)
 

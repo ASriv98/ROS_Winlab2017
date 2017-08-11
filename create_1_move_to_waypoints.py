@@ -10,7 +10,7 @@ from ca_msgs.msg import Bumper
 
 points_traveled = []
 
-rospy.init_node("roomba_pid_controller")
+rospy.init_node("create_1_move_to_waypoints")
 velocity_publisher = rospy.Publisher('roomba/cmd_vel', Twist, queue_size=10)
 path_publisher = rospy.Publisher('/roomba/location', Path, queue_size=10)
 
@@ -41,7 +41,7 @@ def get_plan():
 
 	new_plan = []
 
-	plan = rospy.wait_for_message('/create_1_waypoints', Path)
+	plan = rospy.wait_for_message('roomba/waypoints', Path)
 	print "Calculating a new plan..."
 	for point in plan.poses:
 		x = point.pose.position.x
